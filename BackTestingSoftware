@@ -1,0 +1,173 @@
+import requests
+import tkinter as tk
+from tkinter.ttk import *
+from tkinter import messagebox
+from ttkbootstrap import Style
+import os
+from openai import OpenAI
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter import Canvas
+
+def newLines(n): 
+    for i in range(n): 
+        print("")
+
+
+openaiKey = 'OPENAI API KEY'
+client = OpenAI(api_key=openaiKey)
+
+latitude = input("Enter your latitude: ")
+longitude = input("Enter your longitude: ")
+apiKeyWeather = 'weatherapi.com to get an api key'
+endpointWeather = f'http://api.weatherapi.com/v1/forecast.json?key={apiKeyWeather}&q={latitude},{longitude}&days=2&alerts=yes'
+response = requests.get(endpointWeather)
+responseJSON = response.json()
+newLines(2)
+print(f"Your country: {responseJSON['location']['country']}")
+newLines(1)
+print(f"Your region: {responseJSON['location']['region']}")
+newLines(4)
+
+daysList = responseJSON['forecast']['forecastday']
+timeList = []
+temperatureHourlyList = []
+windHourlyList = []
+compositePrecpitationList = []
+humidityHourlyList = []
+alertsReturned = responseJSON['alerts']
+print("ALERTS:", alertsReturned)
+newLines(4)
+
+for day in daysList: 
+    for hour in day['hour']:
+        timeList.append(hour['time'])
+        temperatureHourlyList.append(hour['temp_c'])
+        windHourlyList.append(hour['wind_mph'])
+        chance = hour['chance_of_rain']
+        percipitation = hour['precip_mm']
+        compositePrecpitationList.append(chance * percipitation)
+        humidityHourlyList.append(hour['humidity'])
+
+openaiRESPONSE = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {
+        "role": "system",
+        "content": "You are an expert at crop irrigation and agriculture. After many years of experience in farming of all sorts of crops, you know how to find the optimal time for irrigation of a crop based on climate data that is given to you. Each list describes a different data point. Each element in a list represents information about the weather in a certain hour. For example, the nth index in every list represents data about the nth hour in the hours list given to you. The hours list tells you about the time and date of each data point. Each data point in a list corresponds to the data points in the other lists with the same index, since each index in the lists represents the same hour. Every element in the list represents a different hour in time. \n\nRespond only by saying one of the values in the list of hours, e.g. '2023-12-24 19:00'"
+        },
+        {
+        "role": "user",
+        "content": f"Predict the single best time to irrigate a plant. Based on the following data only: List of hours: {timeList}, list of temperatures (degrees celcius): {temperatureHourlyList}, the list of wind speed in mph: {windHourlyList}, percipitation list (this is a number which multiplies the change of percipitation with the millimetres of percipitation): {compositePrecpitationList}, and lastly the humidity list: {humidityHourlyList} "
+        }
+    ],
+    temperature=0.41, ### lower temperature? 
+    max_tokens=1665,
+    top_p=1,
+    frequency_penalty=0,
+    presence_penalty=0
+    )  
+print(f"The optimal time to irrigate is: {openaiRESPONSE.choices[0].message.content}")
+element = openaiRESPONSE.choices[0].message.content
+elementList = element.split(' ')
+beforeSpace = elementList[0]
+afterSpace = elementList[1]
+elementDate = beforeSpace.split('-')[2]
+elementTime = afterSpace.split(':')[0]
+if elementTime[0] == '0' and elementTime != '00':
+    elementTime = elementTime[1]
+result = f'{elementDate}@\n{elementTime}'
+
+newXAxisLabels = []
+for element in timeList: 
+    elementList = element.split(' ')
+    beforeSpace = elementList[0]
+    afterSpace = elementList[1]
+    elementDate = beforeSpace.split('-')[2]
+    elementTime = afterSpace.split(':')[0]
+    if elementTime[0] == '0' and elementTime != '00':
+        elementTime = elementTime[1]
+    newXAxisLabels.append(f'{elementDate}@\n{elementTime}')
+
+# Creating the Tkinter window
+root = tk.Tk()
+root.title("Weather Data Plots")
+
+root.geometry('1600x800')
+
+# Creating a frame for the scrollbar
+frame = Frame(root)
+frame.pack(fill=tk.BOTH, expand=True)
+
+# Adding a vertical scrollbar
+scrollbar = Scrollbar(frame)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+# Creating a canvas to hold the plots
+canvas = Canvas(frame, yscrollcommand=scrollbar.set)
+canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+# Configuring the scrollbar
+scrollbar.config(command=canvas.yview)
+
+# Creating a frame to hold the plots inside the canvas
+plot_frame = Frame(canvas)
+canvas.create_window((0, 0), window=plot_frame, anchor='nw')
+
+# Plotting each set of data on its respective subplot
+fig, axs = plt.subplots(5, 1, figsize=(16, 10))  # 5 subplots in a column layout
+
+axs[0].plot(newXAxisLabels, temperatureHourlyList, marker='X')
+axs[0].set_xlabel('Hours in the next few days')
+axs[0].set_ylabel('Temperature C')
+axs[0].set_title('Temperatures graph')
+axs[0].grid(True)
+axs[0].axvline(result, color='red', linestyle='--', label='CHOSEN TIME')
+
+axs[1].plot(newXAxisLabels, windHourlyList, marker='X')
+axs[1].set_xlabel('Hours in the next few days')
+axs[1].set_ylabel('Wind mph')
+axs[1].set_title('Wind speed graph')
+axs[1].grid(True)
+axs[1].axvline(result, color='red', linestyle='--', label='CHOSEN TIME')
+
+axs[2].plot(newXAxisLabels, compositePrecpitationList, marker='X')
+axs[2].set_xlabel('Hours in the next few days')
+axs[2].set_ylabel('Precipitation (mm of rain multiplied by chance of rain for the hour)')
+axs[2].set_title('Precipitation graph')
+axs[2].grid(True)
+axs[2].axvline(result, color='red', linestyle='--', label='CHOSEN TIME')
+
+axs[3].plot(newXAxisLabels, temperatureHourlyList, marker='X')
+axs[3].set_xlabel('Hours in the next few days')
+axs[3].set_ylabel('Temperature C')
+axs[3].set_title('Temperatures of the hours in the following days')
+axs[3].grid(True)
+axs[3].axvline(result, color='red', linestyle='--', label='CHOSEN TIME')
+
+axs[4].plot(newXAxisLabels, humidityHourlyList, marker='X')
+axs[4].set_xlabel('Hours in the next few days')
+axs[4].set_ylabel('Humidity')
+axs[4].set_title('Humidity graph')
+axs[4].grid(True)
+axs[4].axvline(result, color='red', linestyle='--', label='CHOSEN TIME')
+
+for ax in axs:
+    ax.tick_params(axis='x', labelsize=7)
+
+# Adjust layout to prevent overlapping
+plt.tight_layout()
+
+# Embed the plots in the Tkinter frame
+canvas_fig = FigureCanvasTkAgg(fig, master=plot_frame)
+canvas_fig.draw()
+canvas_fig.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+# Update the scroll region after adding the plots
+plot_frame.update_idletasks()
+canvas.config(scrollregion=canvas.bbox("all"))
+
+root.lift()
+root.attributes('-topmost', True)
+root.after_idle(root.attributes, '-topmost', False)
+root.mainloop()
