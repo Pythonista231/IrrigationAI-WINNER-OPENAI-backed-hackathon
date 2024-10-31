@@ -1,5 +1,3 @@
-# identify if critical right now, if not then ask how many days do you think that it has, and then depending on that then it goes to GPT. 
-
 import requests
 import tkinter as tk
 from tkinter.ttk import *
@@ -9,18 +7,20 @@ from openai import OpenAI
 
 
 
-api_key = 'OPENAI API KEY'
-client = OpenAI(api_key = api_key)
+apiKey = 'OPENAI API KEY'
+client = OpenAI(api_key = apiKey)
 
 
-def clear_widgets(frame):
+def clearWidgets(frame):
     for widget in frame.winfo_children():
         widget.destroy()
 
-def correct():
-    global timeList, temperatureHourlyList, timeList, windHourlyList, compositePrecpitationList, humidityHourlyList
 
-    openaiRESPONSE = client.chat.completions.create(
+def correctPressedCalcOptIrrigTime():
+    global openaiResponse, temperatureHourlyList, timeList, windHourlyList, humidityHourlyList, compositePrecipitationList
+    # once they click the correct button, this is executed which calculates the result of the optimal irrigation time. 
+
+    openaiResponse = client.chat.completions.create(
     model="gpt-4",
     messages=[
         {
@@ -29,7 +29,7 @@ def correct():
         },
         {
         "role": "user",
-        "content": f"Predict the best time to irrigate a plant. Based on the following data only: List of hours: {timeList}, list of temperatures (degrees celcius): {temperatureHourlyList}, the list of wind speed in mph: {windHourlyList}, percipitation list (this is a number which multiplies the change of percipitation with the millimetres of percipitation): {compositePrecpitationList}, and lastly the humidity list: {humidityHourlyList} "
+        "content": f"Predict the best time to irrigate a plant. Based on the following data only: List of hours: {timeList}, list of temperatures (degrees celcius): {temperatureHourlyList}, the list of wind speed in mph: {windHourlyList}, percipitation list (this is a number which multiplies the change of percipitation with the millimetres of percipitation): {compositePrecipitationList}, and lastly the humidity list: {humidityHourlyList} "
         }
     ],
     temperature=0.61,
@@ -38,26 +38,35 @@ def correct():
     frequency_penalty=0,
     presence_penalty=0
     )
-    clear_widgets(root)
+
+
+
+def displayOptIrrigTime(): 
+    global openaiResponse
+    # this function is called after the one above which calculates it. This function displays the optimal irrigation time to the user. 
+    clearWidgets(root)
+    
+    # showing the optimal irrigation time to the user: 
     titleFrame = Frame(master = root).pack(pady = 25)
     titleResult1 = Label(text = "Optimal Irrigation Time", font = 'Cabrili 20 underline bold', master = titleFrame).pack(pady = 15)
     titleResult2 = Label(text = "in the Next 4 Days: ", font = 'Cabrili 20 underline bold', master = titleFrame).pack()
 
 
-    labelResult = Label(text = str(openaiRESPONSE.choices[0].message.content[25:]), master = root, font = 'Cabrili 16 bold')
+    labelResult = Label(text = str(openaiResponse.choices[0].message.content[25:]), master = root, font = 'Cabrili 16 bold')
     labelResult.pack(pady = 200)
 
 
 
-    # response is the response from the AI, make it so that it is shown to the user in the app!!!
 
 
 
 
-def doneButtonPressed():
-    # when the done button is pressed, we first try converting to decimal and see whether works. we check that the long and lat values are valid in terms of being converted to a float.
-    global latitudeObj, longitudeObj, timeList, temperatureHourlyList, compositePrecpitationList, humidityHourlyList, windHourlyList
-    clear_widgets(countryRegionWrongFrame)
+
+def donePressedGetWeatherData():
+    global temperatureHourlyList, timeList, windHourlyList, humidityHourlyList, compositePrecipitationList
+    # when the done button is pressed, we use their longitude and latitude values to gather data about their weather. 
+    # also validates their inputs and confirms the user's location with the user.  
+    clearWidgets(countryRegionWrongFrame)
 
     try:
         latitudeValue = float(latitudeObj.get())
@@ -67,8 +76,6 @@ def doneButtonPressed():
 
     else:
         # now to check whether valid in terms of the value of them.
-
-
         if not -90.0 <= latitudeValue <= 90.0 :
             messagebox.showinfo("Error", "Latitude has to be between -90 and 90, try again. ")
 
@@ -79,19 +86,14 @@ def doneButtonPressed():
 
         if (-180 <= longitudeValue <= 180) and (-90 <= latitudeValue <= 90): # if valid:
 
-            # sending the api request (getting actual weather). (will give us wind speed, weather and humidity). # 1000 free calls a day, i think up to 60 a minute but may be wrong, check.
+            # sending the api request (getting actual weather). (will give us wind speed, weather and humidity).
 
-            #### what is the alert response??? maybe the weather events?
             lat = latitudeValue
             long = longitudeValue
-            ### do we want to exclude anything?? make sure fine right now with the empty value.
-            ### standard units right now, fine??
             api_key_weather = 'weatherapi.com to get a key. ' 
             endpointWeather = f'http://api.weatherapi.com/v1/forecast.json?key={api_key_weather}&q={lat},{long}&days=4&alerts=yes'
-            ### by default 4 days but will change later!! if u don't put anything for days then returns today's weathar.
             response = requests.get(endpointWeather)
             responseJSON = response.json()
-
 
 
             countryLabel = Label(text = f"Your country: {responseJSON['location']['country']}", master = countryRegionWrongFrame, font = 'Cabrili 16 bold')
@@ -104,7 +106,7 @@ def doneButtonPressed():
             ifWrongLabel.pack(pady = 10)
 
 
-            correctButton = Button(master = countryRegionWrongFrame, text = "Correct", command = correct)
+            correctButton = Button(master = countryRegionWrongFrame, text = "Correct", command = correctPressedCalcOptIrrigTime)
             correctButton.pack(pady = 5)
 
             # responseJSON keys are location current forecast and alerts.
@@ -114,11 +116,9 @@ def doneButtonPressed():
             timeList = []
             temperatureHourlyList = []
             windHourlyList = []
-            compositePrecpitationList = []
+            compositePrecipitationList = []
             humidityHourlyList = []
             alertsReturned = responseJSON['alerts']
-            # alertsReturned contains a dictionary where it's like alertsReturned = {alert: [here will go the details]}
-            # what if there is more than one alert?
             print("ALERTS:", alertsReturned)
 
             for day in daysList: 
@@ -128,7 +128,7 @@ def doneButtonPressed():
                     windHourlyList.append(hour['wind_mph'])
                     chance = hour['chance_of_rain']
                     percipitation = hour['precip_mm']
-                    compositePrecpitationList.append(chance * percipitation)
+                    compositePrecipitationList.append(chance * percipitation)
                     humidityHourlyList.append(hour['humidity'])
                     # now hour is a dictionary which describes an hour.
                     # keys: 'time_epoch', 'time', 'temp_c', 'temp_f', 'is_day', 'condition', 'wind_mph', 'wind_kph', 'wind_degree', 'wind_dir', 'pressure_mb', 'pressure_in', 'precip_mm', 'precip_in', 'humidity', 'cloud', 'feelslike_c', 'feelslike_f', 'windchill_c', 'windchill_f', 'heatindex_c', 'heatindex_f', 'dewpoint_c', 'dewpoint_f', 'will_it_rain', 'chance_of_rain', 'will_it_snow', 'chance_of_snow', 'vis_km', 'vis_miles', 'gust_mph', 'gust_kph', 'uv'
@@ -180,7 +180,7 @@ latitudeLabel.pack(pady = 10)
 latitudeEntry = Entry(master = latFrame, textvariable = latitudeObj)
 latitudeEntry.pack()
 
-doneButton = Button(text = "Done", master = longlatFrame, command = doneButtonPressed)
+doneButton = Button(text = "Done", master = longlatFrame, command = donePressedGetWeatherData)
 doneButton.pack(pady = 50)
 
 
