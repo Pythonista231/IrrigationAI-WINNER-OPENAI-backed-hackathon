@@ -20,24 +20,27 @@ def correctPressedCalcOptIrrigTime():
     global openaiResponse, temperatureHourlyList, timeList, windHourlyList, humidityHourlyList, compositePrecipitationList
     # once they click the correct button, this is executed which calculates the result of the optimal irrigation time. 
 
-    openaiResponse = client.chat.completions.create(
-    model="gpt-4",
-    messages=[
-        {
-        "role": "system",
-        "content": "You are an expert at crop irrigation and agriculture. After many years of experience in farming of all sorts of crops, you know how to find the optimal time for irrigation of a crop based on climate data that is given to you. Each list describes a different data point. Each element in a list represents information about the weather in a certain hour. For example, the nth index in every list represents data about the nth hour in the hours list given to you. The hours list tells you about the time and date of each data point. Each data point in a list corresponds to the data points in the other lists with the same index, since each index in the lists represents the same hour. Every element in the list represents a different hour in time. \n\nRespond by saying 'Optimal irrigation time: ', respond in short, and tell the user what date and time is optimal to irrigate, e.g. 21st of December at 14:00 or whatever the optimal time to irrigate is"
-        },
-        {
-        "role": "user",
-        "content": f"Predict the best time to irrigate a plant. Based on the following data only: List of hours: {timeList}, list of temperatures (degrees celcius): {temperatureHourlyList}, the list of wind speed in mph: {windHourlyList}, percipitation list (this is a number which multiplies the change of percipitation with the millimetres of percipitation): {compositePrecipitationList}, and lastly the humidity list: {humidityHourlyList} "
-        }
-    ],
-    temperature=0.61,
-    max_tokens=1665,
-    top_p=1,
-    frequency_penalty=0,
-    presence_penalty=0
-    )
+    try: 
+        openaiResponse = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {
+            "role": "system",
+            "content": "You are an expert at crop irrigation and agriculture. After many years of experience in farming of all sorts of crops, you know how to find the optimal time for irrigation of a crop based on climate data that is given to you. Each list describes a different data point. Each element in a list represents information about the weather in a certain hour. For example, the nth index in every list represents data about the nth hour in the hours list given to you. The hours list tells you about the time and date of each data point. Each data point in a list corresponds to the data points in the other lists with the same index, since each index in the lists represents the same hour. Every element in the list represents a different hour in time. \n\nRespond by saying 'Optimal irrigation time: ', respond in short, and tell the user what date and time is optimal to irrigate, e.g. 21st of December at 14:00 or whatever the optimal time to irrigate is"
+            },
+            {
+            "role": "user",
+            "content": f"Predict the best time to irrigate a plant. Based on the following data only: List of hours: {timeList}, list of temperatures (degrees celcius): {temperatureHourlyList}, the list of wind speed in mph: {windHourlyList}, percipitation list (this is a number which multiplies the change of percipitation with the millimetres of percipitation): {compositePrecipitationList}, and lastly the humidity list: {humidityHourlyList} "
+            }
+        ],
+        temperature=0.61,
+        max_tokens=1665,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0
+        )
+    except Exception as e: 
+        print(f"An error occured: {e}")
 
 
 
@@ -72,7 +75,7 @@ def donePressedGetWeatherData():
         latitudeValue = float(latitudeObj.get())
         longitudeValue = float(longitudeObj.get())
     except ValueError:
-        messagebox.showinfo("Error, TRY AGAIN", "Longitude and latitude values should be either a decimal or whole number. ")
+        messagebox.showinfo("Error, TRY AGAIN", "Longitude and latitude values should be either a decimal or whole number and nothing else. ")
 
     else:
         # now to check whether valid in terms of the value of them.
@@ -91,9 +94,12 @@ def donePressedGetWeatherData():
             lat = latitudeValue
             long = longitudeValue
             api_key_weather = 'weatherapi.com to get a key. ' 
-            endpointWeather = f'http://api.weatherapi.com/v1/forecast.json?key={api_key_weather}&q={lat},{long}&days=4&alerts=yes'
-            response = requests.get(endpointWeather)
-            responseJSON = response.json()
+            try: 
+                endpointWeather = f'http://api.weatherapi.com/v1/forecast.json?key={api_key_weather}&q={lat},{long}&days=4&alerts=yes'
+                response = requests.get(endpointWeather)
+                responseJSON = response.json()
+            except Exception as e: 
+                print(f"An error occured: {e}")
 
 
             countryLabel = Label(text = f"Your country: {responseJSON['location']['country']}", master = countryRegionWrongFrame, font = 'Cabrili 16 bold')
