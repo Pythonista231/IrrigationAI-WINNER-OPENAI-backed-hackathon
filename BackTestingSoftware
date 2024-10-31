@@ -55,28 +55,35 @@ for day in daysList:
 
 
 # openai api call to get optimal irrigation time: 
-openaiRESPONSE = client.chat.completions.create(
-    model="gpt-4",
-    messages=[
-        {
-        "role": "system",
-        "content": "You are an expert at crop irrigation and agriculture. After many years of experience in farming of all sorts of crops, you know how to find the optimal time for irrigation of a crop based on climate data that is given to you. Each list describes a different data point. Each element in a list represents information about the weather in a certain hour. For example, the nth index in every list represents data about the nth hour in the hours list given to you. The hours list tells you about the time and date of each data point. Each data point in a list corresponds to the data points in the other lists with the same index, since each index in the lists represents the same hour. Every element in the list represents a different hour in time. \n\nRespond only by saying one of the values in the list of hours, e.g. '2023-12-24 19:00'"
-        },
-        {
-        "role": "user",
-        "content": f"Predict the single best time to irrigate a plant. Based on the following data only: List of hours: {timeList}, list of temperatures (degrees celcius): {temperatureHourlyList}, the list of wind speed in mph: {windHourlyList}, percipitation list (this is a number which multiplies the change of percipitation with the millimetres of percipitation): {compositePrecpitationList}, and lastly the humidity list: {humidityHourlyList} "
-        }
-    ],
-    temperature=0.41, ### lower temperature? 
-    max_tokens=1665,
-    top_p=1,
-    frequency_penalty=0,
-    presence_penalty=0
-    )  
+
+def calculateOptIrrigTime(): 
+    openaiResponse = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {
+            "role": "system",
+            "content": "You are an expert at crop irrigation and agriculture. After many years of experience in farming of all sorts of crops, you know how to find the optimal time for irrigation of a crop based on climate data that is given to you. Each list describes a different data point. Each element in a list represents information about the weather in a certain hour. For example, the nth index in every list represents data about the nth hour in the hours list given to you. The hours list tells you about the time and date of each data point. Each data point in a list corresponds to the data points in the other lists with the same index, since each index in the lists represents the same hour. Every element in the list represents a different hour in time. \n\nRespond only by saying one of the values in the list of hours, e.g. '2023-12-24 19:00'"
+            },
+            {
+            "role": "user",
+            "content": f"Predict the single best time to irrigate a plant. Based on the following data only: List of hours: {timeList}, list of temperatures (degrees celcius): {temperatureHourlyList}, the list of wind speed in mph: {windHourlyList}, percipitation list (this is a number which multiplies the change of percipitation with the millimetres of percipitation): {compositePrecpitationList}, and lastly the humidity list: {humidityHourlyList} "
+            }
+        ],
+        temperature=0.41, ### lower temperature? 
+        max_tokens=1665,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0
+        )  
+    return openaiResponse
+
+
+# getting optimal irrigation time: 
+openaiResponse = calculateOptIrrigTime()
 
 # showing user optimal irrigation time: 
-print(f"The optimal time to irrigate is: {openaiRESPONSE.choices[0].message.content}")
-element = openaiRESPONSE.choices[0].message.content
+print(f"The optimal time to irrigate is: {openaiResponse.choices[0].message.content}")
+element = openaiResponse.choices[0].message.content
 elementList = element.split(' ')
 beforeSpace = elementList[0]
 afterSpace = elementList[1]
