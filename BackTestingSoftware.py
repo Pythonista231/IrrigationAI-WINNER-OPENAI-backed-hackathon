@@ -169,8 +169,8 @@ canvas.bind_all("<Shift-MouseWheel>", lambda event: canvas.xview_scroll(-1 * (ev
 
 
 # frame to hold plots inside canvas: 
-plot_frame = Frame(canvas)
-canvas.create_window((0, 0), window=plot_frame, anchor='nw')
+plotFrame = Frame(canvas)
+canvas.create_window((0, 0), window=plotFrame, anchor='nw')
 
 #plotting each datapoint in a graph. 
 # the width of the graphs depend on how large the irrigation window that was taken into consideration was: 
@@ -221,12 +221,12 @@ for ax in axs:
 
 plt.tight_layout()
 
-canvas_fig = FigureCanvasTkAgg(fig, master=plot_frame)
+canvas_fig = FigureCanvasTkAgg(fig, master=plotFrame)
 canvas_fig.draw()
 canvas_fig.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 # updating the scroll region: 
-plot_frame.update_idletasks()
+plotFrame.update_idletasks()
 canvas.config(scrollregion=canvas.bbox("all"))
 
 
