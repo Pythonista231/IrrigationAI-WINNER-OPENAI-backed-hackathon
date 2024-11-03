@@ -1,6 +1,7 @@
 import requests
 import tkinter as tk
 from tkinter.ttk import *
+from ttkbootstrap import Style
 from tkinter import messagebox
 from openai import OpenAI
 import matplotlib.pyplot as plt
@@ -45,7 +46,6 @@ def getWeatherData(longitude, latitude):
 def calculateOptIrrigTime(timeList, temperatureHourlyList, windHourlyList, humidityHourlyList, compositePrecipitationList): 
     try: 
         openaiKey = ''
-        client = OpenAI(api_key=openaiKey)
         # api call to calculate optimal irrigation time. 
         openaiResponse = client.chat.completions.create(
             model="gpt-4",
@@ -115,6 +115,7 @@ openaiResponse = calculateOptIrrigTime(timeList, temperatureHourlyList, windHour
 
 # showing user optimal irrigation time: 
 print(f"The optimal time to irrigate is: {openaiResponse.choices[0].message.content}")
+print("Please find the opened window contianing the data plotted in graphs. ")
 element = openaiResponse.choices[0].message.content
 elementList = element.split(' ')
 beforeSpace = elementList[0]
@@ -169,8 +170,8 @@ canvas.bind_all("<Shift-MouseWheel>", lambda event: canvas.xview_scroll(-1 * (ev
 
 
 # frame to hold plots inside canvas: 
-plotFrame = Frame(canvas)
-canvas.create_window((0, 0), window=plotFrame, anchor='nw')
+plot_frame = Frame(canvas)
+canvas.create_window((0, 0), window=plot_frame, anchor='nw')
 
 #plotting each datapoint in a graph. 
 # the width of the graphs depend on how large the irrigation window that was taken into consideration was: 
@@ -221,15 +222,16 @@ for ax in axs:
 
 plt.tight_layout()
 
-canvas_fig = FigureCanvasTkAgg(fig, master=plotFrame)
+canvas_fig = FigureCanvasTkAgg(fig, master=plot_frame)
 canvas_fig.draw()
 canvas_fig.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 # updating the scroll region: 
-plotFrame.update_idletasks()
+plot_frame.update_idletasks()
 canvas.config(scrollregion=canvas.bbox("all"))
 
 
 root.lift() # brings up the analysis window so user won't have to find it. 
+root.focus_force()
 root.protocol("WM_DELETE_WINDOW", lambda: (root.destroy(), rootClosed())) # handles application termination. 
 root.mainloop()
