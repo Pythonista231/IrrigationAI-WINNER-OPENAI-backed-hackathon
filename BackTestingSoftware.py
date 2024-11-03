@@ -232,6 +232,6 @@ canvas.config(scrollregion=canvas.bbox("all"))
 
 
 root.lift() # brings up the analysis window so user won't have to find it. 
-root.focus_force()
+root.attributes("-topmost", True)
 root.protocol("WM_DELETE_WINDOW", lambda: (root.destroy(), rootClosed())) # handles application termination. 
 root.mainloop()
