@@ -15,19 +15,19 @@ import _tkinter
 
 
 try:
-    apiKey = ''
-    client = OpenAI(api_key = apiKey)
+    openaiApiKey = 'enter your api key from OPENAI'
+    client = OpenAI(api_key = openaiApiKey)
 except Exception as e: 
     messagebox.showerror("Error with openai service", f"Details {e}")
     sys.exit()
 
 
-# clears the widgets of a frame. 
+# function to clear the widgets of a frame. 
 def clearWidgets(frame):
     for widget in frame.winfo_children():
         widget.destroy()
 
-
+# function to show the processing screen to the user. 
 def showProcessingScreen(frame):
     clearWidgets(frame)
     titleLabel = Label(master = frame, text = "Processing... This may take up to a minute ", font = 'calibri 18').pack(pady = 250)
@@ -226,7 +226,7 @@ def validateLongLatGetWeatherData():
             # sending the api request (getting actual weather). (will give us wind speed, weather and humidity).
             lat = latitudeValue
             long = longitudeValue
-            api_key_weather = '' 
+            api_key_weather = 'enter your weather api from weatherapi.com' 
             try: 
                 endpointWeather = f'http://api.weatherapi.com/v1/forecast.json?key={api_key_weather}&q={lat},{long}&days={numDays}&alerts=yes'
                 weatherResponse = requests.get(endpointWeather)
@@ -464,7 +464,6 @@ def showData(): # this is a function to show the user the weather data of all th
     canvas.config(scrollregion=canvas.bbox("all"))
 
     root2.lift() # brings up the analysis window so user won't have to find it. 
-    root2.attributes("-topmost", True)
     root2.protocol("WM_DELETE_WINDOW", lambda: (root2.destroy(), root2Closed())) # helps handle application termination. 
     root2.mainloop()
 
@@ -493,7 +492,6 @@ getSamplePicture() #the first thing that is done is asking for a sample picture 
 
 root.protocol("WM_DELETE_WINDOW", lambda: (root.destroy(), rootClosed())) # helps handle application termination. 
 root.lift() # brings up the window so user won't have to find it. 
-root.attributes("-topmost", True)
 
 
 root.mainloop()
