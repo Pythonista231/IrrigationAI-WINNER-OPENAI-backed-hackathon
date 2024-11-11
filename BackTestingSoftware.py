@@ -27,7 +27,7 @@ def rootClosed(): # handles software termination.
 # function to gather weather data from their location. returns response in json. 
 def getWeatherData(longitude, latitude): 
     # getting their weather data: 
-    apiKeyWeather = ''
+    apiKeyWeather = 'enter your weather api key from weatherapi.com here'
     endpointWeather = f'http://api.weatherapi.com/v1/forecast.json?key={apiKeyWeather}&q={latitude},{longitude}&days=3&alerts=yes'
     # since this software is used for testing, we use a default value of 3 for the number of days from now in which irrigation could take place. 
     # in the actual software (not this testing software), a photo sample of a crop is taken to establish the max number of days from now irrigation could be delayed, so that we can choose an optimal irrigation time from that window.  
@@ -45,7 +45,8 @@ def getWeatherData(longitude, latitude):
 # function to calculate optimal irrigation time. returns plain response with no modification
 def calculateOptIrrigTime(timeList, temperatureHourlyList, windHourlyList, humidityHourlyList, compositePrecipitationList): 
     try: 
-        openaiKey = ''
+        openaiKey = 'enter your openai api key here'
+        client = OpenAI(api_key=openaiKey)
         # api call to calculate optimal irrigation time. 
         openaiResponse = client.chat.completions.create(
             model="gpt-4",
@@ -232,6 +233,6 @@ canvas.config(scrollregion=canvas.bbox("all"))
 
 
 root.lift() # brings up the analysis window so user won't have to find it. 
-root.attributes("-topmost", True)
+root.focus_force()
 root.protocol("WM_DELETE_WINDOW", lambda: (root.destroy(), rootClosed())) # handles application termination. 
 root.mainloop()
